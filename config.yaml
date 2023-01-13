@@ -1,0 +1,11 @@
+---
+domain: "www.cnnvd.org.cn" #域名
+api:
+  vul_detail: "web/cnnvdVul/getCnnnvdDetailOnDatasource"  # 漏洞详情
+  vul_list: "web/homePage/cnnvdVulList" # 漏洞列表
+  vul_type: "web/homePage/vulTypeList"  # 漏洞类型
+  vendor: "web/homePage/getVendorSelectList"  # 供应商
+  product: "web/homePage/getProductSelectList"  # 产品
+page:
+  index: 1  # 分页索引
+  size: 100 # 分页大小

@@ -24,7 +24,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile string
+	target  string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -33,7 +36,9 @@ var rootCmd = &cobra.Command{
 	Long:  Banner(),
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	//Run: func(cmd *cobra.Command, args []string) {
+	//	fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
+	//},
 }
 
 func Banner() (banner string) {
@@ -41,8 +46,8 @@ func Banner() (banner string) {
                              .     .     ,              .    ,    
                _.._ ._ .  , _| ___ |* __-+- ___ . .._  _| _.-+- _ 
               (_.[ )[ ) \/ (_]     ||_)  |      (_|[_)(_](_] | (/,
-                                                   |              
-`
+                                                   |
+	CNNVD漏洞收集 (https://github.com/0yaney0/cnnvd-list-update)`
 	return banner
 }
 
@@ -63,10 +68,11 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cnnvd-list-update.yaml)")
+	rootCmd.PersistentFlags().StringVar(&target, "target", "", "指定需要爬取的目标对象")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -84,7 +90,6 @@ func initConfig() {
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".cnnvd-list-update")
 	}
-
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
