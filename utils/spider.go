@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"golang.org/x/xerrors"
 	"io"
 	"io/ioutil"
@@ -10,6 +11,74 @@ import (
 	"strings"
 	"time"
 )
+
+// FetchConcurrently 根据不同的reqBody并发爬取url
+func FetchConcurrently(url string, reqBodys []string, concurrency, wait, retry int) (responses [][]byte, err error) {
+	reqChan := make(chan string, len(reqBodys)) // 请求体的chan
+	resChan := make(chan []byte, len(reqBodys)) // 响应体的chan
+	errChan := make(chan error, len(reqBodys))  // 错误的chan
+	defer close(reqChan)
+	defer close(resChan)
+	defer close(errChan)
+
+	// 将请求体传入chan中
+	// TODO 为什么开并发
+	go func() {
+		for _, reqBody := range reqBodys {
+			reqChan <- reqBody
+		}
+	}()
+
+	// 开启并发任务
+	tasks := GenWorkers(concurrency, wait)
+
+	for range reqBodys {
+		tasks <- func() {
+			reqBody := <-reqChan
+			res, err := Post(url, reqBody, retry) //获取chan里的请求体，开始爬取
+			// 如果爬取不成功，则返回错误
+			if err != nil {
+				errChan <- err
+				return
+			}
+			// 如果爬取成功，返回响应体
+			resChan <- res
+		}
+	}
+
+	// 处理结果
+	var errs []error
+	timeout := time.After(10 * 60 * time.Second)
+	for range reqBodys {
+		select {
+		case res := <-resChan:
+			responses = append(responses, res)
+		case err := <-errChan:
+			errs = append(errs, err)
+		case <-timeout:
+			return nil, xerrors.New("Timeout Fetching URL")
+		}
+	}
+	if 0 < len(errs) {
+		return responses, fmt.Errorf("%s", errs)
+
+	}
+	return responses, nil
+}
+
+// GenWorkers 将一个函数传入通道中，开个goroutine来执行
+func GenWorkers(num, wait int) chan<- func() {
+	tasks := make(chan func())
+	for i := 0; i < num; i++ {
+		go func() {
+			for f := range tasks {
+				f()
+				time.Sleep(time.Duration(wait) * time.Second)
+			}
+		}()
+	}
+	return tasks
+}
 
 func Post(url, reqBody string, retry int) (res []byte, err error) {
 	for i := 0; i <= retry; i++ {
@@ -26,7 +95,7 @@ func Post(url, reqBody string, retry int) (res []byte, err error) {
 			return res, nil
 		}
 	}
-	return nil, xerrors.Errorf("failed to fetch %s: %w", err)
+	return nil, xerrors.Errorf("failed to fetch %s: %w", url, err)
 }
 
 func post(url string, reqBody string) ([]byte, error) {

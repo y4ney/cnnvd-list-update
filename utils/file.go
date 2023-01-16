@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"golang.org/x/xerrors"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -51,4 +52,52 @@ func Write(filePath string, data interface{}) error {
 		return xerrors.Errorf("file write error: %w", err)
 	}
 	return nil
+}
+
+func Read(filePath string) (any, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, xerrors.Errorf("fail to read :%w", err)
+	}
+	var result interface{}
+	err = json.Unmarshal(data, result)
+	if err != nil {
+		return nil, xerrors.Errorf("fail to unmarshal:%w", err)
+	}
+	return result, nil
+}
+
+// PathExists 判断所给路径是否存在
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+// IsDir 判断所给路径是否为文件夹
+func IsDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
+}
+
+func GetFile(path string) ([]string, error) {
+	var files []string
+	err := filepath.WalkDir(filepath.Join(CNNVDListDir(), "2010"), func(path string, d fs.DirEntry, err error) error {
+		if !IsDir(path) {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
 }

@@ -13,21 +13,29 @@ import (
 )
 
 const (
-	Domain       = "www.cnnvd.org.cn"
-	APIVulDetail = "web/cnnvdVul/getCnnnvdDetailOnDatasource"
-	APIVulList   = "web/homePage/cnnvdVulList"
-	APIVendor    = "web/homePage/getVendorSelectList"
-	APIVulType   = "web/homePage/vulTypeList"
-	APIProduct   = "web/homePage/getProductSelectList"
-	PageIndex    = 1
-	PageSize     = 100
-	Retry        = 5
-	FirstYear    = 1988
+	Domain         = "www.cnnvd.org.cn"
+	APIVulDetail   = "web/cnnvdVul/getCnnnvdDetailOnDatasource"
+	APIVulList     = "web/homePage/cnnvdVulList"
+	APIVendor      = "web/homePage/getVendorSelectList"
+	APIVulType     = "web/homePage/vulTypeList"
+	APIProduct     = "web/homePage/getProductSelectList"
+	PageSize       = 100
+	Retry          = 5
+	FirstYear      = 1988
+	DatabaseSource = "root:1600850141yangli@tcp(localhost:3306)/cnnvd?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai"
+	ProductName    = "cnnvd/api/product.go"
+	VendorName     = "cnnvd/api/vendor.go"
+	VulDetailName  = "cnnvd/api/vul_detail.go"
+	VulListName    = "cnnvd/api/vul_list.go"
+	ProductTable   = "product"
+	VendorTable    = "vendor"
+	VulListTable   = "vul_list"
+	VulDetailTable = "vul_detail"
+	VendorFile     = "vendor.json"
+	ProductFile    = "product.json"
+	VulListFile    = "vul_list"
+	VulDetailFile  = "vul_detail"
 )
-
-type API interface {
-	Fetch() error
-}
 
 // ResCode 响应码
 type ResCode struct {
