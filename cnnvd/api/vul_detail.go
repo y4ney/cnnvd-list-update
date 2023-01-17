@@ -86,30 +86,23 @@ func (t *TableVulDetail) TableName() string {
 	return VulDetailTable
 }
 
-func (t *TableVulDetail) createTable(db *gorm.DB) error {
-	if db.Migrator().HasTable(VulDetailTable) {
-		return nil
-	}
-	if err := db.Migrator().CreateTable(&TableVulDetail{}); err != nil {
-		return xerrors.Errorf("fail to create %s table:%w\n", t.TableName(), err)
-	}
-	return nil
-}
-
 func (r *ReqVulDetail) Name() string {
 	return VulDetailName
 }
 
-func (r *ReqVulDetail) Fetch() (*TableVulDetail, error) {
+func (r *ReqVulDetail) Fetch() (*VulDetail, error) {
+	if r.Id == "" || r.VulType == "" || r.CnnvdCode == "" {
+		return nil, xerrors.New("please specify id,vul type and cnnvd vode")
+	}
 	resDetail, err := Post[*ResVulDetail](r, utils.FormatURL(Domain, APIVulDetail))
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to request %s's vulDetail:%w\n", r.Name(), resDetail.Data.CnnvdCode, err)
 	}
 	log.Printf("【%s】fetch %s successfully", r.Name(), resDetail.Data.CnnvdCode)
-	return &TableVulDetail{VulDetail: resDetail.Data}, nil
+	return &resDetail.Data, nil
 }
 
-func (r *ReqVulDetail) Save(data *TableVulList, dir string) error {
+func (r *ReqVulDetail) Save(data *VulDetail, dir string) error {
 	vulDetail := filepath.Join(dir, VulDetailFile)
 	exist, err := utils.PathExists(vulDetail)
 	if err != nil {
@@ -130,8 +123,7 @@ func (r *ReqVulDetail) Save(data *TableVulList, dir string) error {
 }
 
 func (r *ReqVulDetail) StoreByFile(db *gorm.DB, dir string) error {
-	var mysql TableVulDetail
-	if err := mysql.createTable(db); err != nil {
+	if err := CreateTable(db, VulDetailFile); err != nil {
 		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
 	}
 	// 遍历文件夹下的文件
@@ -139,41 +131,49 @@ func (r *ReqVulDetail) StoreByFile(db *gorm.DB, dir string) error {
 	if err != nil {
 		return xerrors.Errorf("【%s】fail to get all files from %s:%w", r.Name(), filepath.Join(dir, VulDetailFile), err)
 	}
+	var vuls []VulDetail
 	for _, file := range files {
 		vul, err := r.read(file)
 		if err != nil {
 			return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), file, err)
 		}
-		db.Create(vul)
-		log.Printf("【%s】store %s successfully", r.Name(), vul.CnnvdCode)
+		vuls = append(vuls, *vul)
 	}
+	r.store(db, &vuls)
 	return nil
 }
 
 func (r *ReqVulDetail) StoreByRequest(db *gorm.DB) error {
-	var mysql TableVulDetail
-	if err := mysql.createTable(db); err != nil {
+	if err := CreateTable(db, VulDetailTable); err != nil {
 		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
 	}
 	vulDetail, err := r.Fetch()
 	if err != nil {
 		return xerrors.Errorf("【%s】fail to fetch :%w\n", r.Name(), err)
 	}
-	mysql = *vulDetail
-	db.Create(&mysql)
-	log.Printf("【%s】store %s successfully", r.Name(), mysql.CnnvdCode)
+	var vuls []VulDetail
+	vuls = append(vuls, *vulDetail)
+	r.store(db, &vuls)
 	return nil
 }
 
-func (r *ReqVulDetail) read(file string) (*TableVulDetail, error) {
+func (r *ReqVulDetail) read(file string) (*VulDetail, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to read :%w", err)
 	}
-	var vulDetail TableVulDetail
+	var vulDetail VulDetail
 	err = json.Unmarshal(data, &vulDetail)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to unmarshal:%w", err)
 	}
 	return &vulDetail, nil
+}
+
+func (r *ReqVulDetail) store(db *gorm.DB, data *[]VulDetail) {
+	var vuls []TableVulDetail
+	for _, vul := range *data {
+		vuls = append(vuls, TableVulDetail{VulDetail: vul})
+	}
+	db.Create(&vuls)
 }

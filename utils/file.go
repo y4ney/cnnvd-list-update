@@ -90,7 +90,7 @@ func IsDir(path string) bool {
 
 func GetFile(path string) ([]string, error) {
 	var files []string
-	err := filepath.WalkDir(filepath.Join(CNNVDListDir(), "2010"), func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if !IsDir(path) {
 			files = append(files, path)
 		}

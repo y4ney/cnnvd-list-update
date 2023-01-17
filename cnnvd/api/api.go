@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/0yaney0/cnnvd-list-update/utils"
 	"golang.org/x/xerrors"
+	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -180,4 +181,23 @@ func SaveCNNVDPerYear(dirPath string, cnnvdID string, data interface{}) error {
 func FormatKeyword(year int, month string) string {
 	// TODO 将year和month先解析为时间，然后在format成keyword
 	return fmt.Sprintf("CNNVD-%v%s-", year, month)
+}
+func CreateTable(db *gorm.DB, name string) (err error) {
+	if db.Migrator().HasTable(name) {
+		return nil
+	}
+	switch name {
+	case ProductTable:
+		err = db.Migrator().CreateTable(&TableProduct{})
+	case VendorTable:
+		err = db.Migrator().CreateTable(&TableVendor{})
+	case VulListTable:
+		err = db.Migrator().CreateTable(&TableVulList{})
+	case VulDetailFile:
+		err = db.Migrator().CreateTable(&TableVulDetail{})
+	}
+	if err != nil {
+		return xerrors.Errorf("fail to create %s table:%w\n", name, err)
+	}
+	return nil
 }

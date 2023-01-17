@@ -58,15 +58,6 @@ type TableVulList struct {
 func (l *TableVulList) TableName() string {
 	return VulListTable
 }
-func (l *TableVulList) createTable(db *gorm.DB) error {
-	if db.Migrator().HasTable(VulListTable) {
-		return nil
-	}
-	if err := db.Migrator().CreateTable(&TableVulList{}); err != nil {
-		return xerrors.Errorf("fail to create %s table:%w\n", l.TableName(), err)
-	}
-	return nil
-}
 
 func (r *ReqVulList) Name() string {
 	return VulListName
@@ -80,7 +71,7 @@ func NewReqVulList(keyword string) *ReqVulList {
 }
 
 func (r *ReqVulList) Fetch() (*[]Record, error) {
-	num, err := r.getPageNum()
+	num, err := r.getPageNum(r.PageSize)
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to get page num:%w\n", r.Name(), err)
 	}
@@ -124,49 +115,35 @@ func (r *ReqVulList) Save(data *[]Record, dir string) error {
 }
 
 func (r *ReqVulList) StoreByFile(db *gorm.DB, dir string) error {
-	var mysql TableVulList
-	if err := mysql.createTable(db); err != nil {
-		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
+	if err := CreateTable(db, VulListTable); err != nil {
+		return xerrors.Errorf("【%s】:%w\n", r.Name(), err)
 	}
 	// 遍历文件夹下的文件
 	files, err := utils.GetFile(filepath.Join(dir, VulListFile))
 	if err != nil {
 		return xerrors.Errorf("【%s】fail to get all files from %s:%w", r.Name(), filepath.Join(dir, VulListFile), err)
 	}
+	var vuls []Record
 	for _, file := range files {
 		vul, err := r.read(file)
 		if err != nil {
 			return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), file, err)
 		}
-		db.Create(vul)
-		log.Printf("【%s】store %s successfully", r.Name(), vul.CnnvdCode)
+		vuls = append(vuls, *vul)
 	}
+	r.store(db, &vuls)
 	return nil
 }
 
 func (r *ReqVulList) StoreByRequest(db *gorm.DB) error {
-	var mysql TableVulList
-	if err := mysql.createTable(db); err != nil {
-		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
+	if err := CreateTable(db, VulListTable); err != nil {
+		return xerrors.Errorf("【%s】:%w\n", r.Name(), err)
 	}
 	vulList, err := r.Fetch()
 	if err != nil {
 		return xerrors.Errorf("【%s】fail to fetch :%w\n", r.Name(), err)
 	}
-	for _, vul := range *vulList {
-		mysql.Id = vul.Id
-		mysql.VulName = vul.VulName
-		mysql.CnnvdCode = vul.CnnvdCode
-		mysql.CveCode = vul.CveCode
-		mysql.HazardLevel = vul.HazardLevel
-		mysql.CreateTime = vul.CreateTime
-		mysql.PublishTime = vul.PublishTime
-		mysql.UpdateTime = vul.UpdateTime
-		mysql.TypeName = vul.TypeName
-		mysql.VulType = vul.VulType
-		db.Create(&mysql)
-		log.Printf("【%s】store %s successfully", r.Name(), mysql.CnnvdCode)
-	}
+	r.store(db, vulList)
 	return nil
 }
 
@@ -191,23 +168,34 @@ func (r *ReqVulList) GetLatestCNNVD() (string, error) {
 	return latestCNNVD, nil
 }
 
-func (r *ReqVulList) getPageNum() (num int, err error) {
+func (r *ReqVulList) getPageNum(pageSize int) (num int, err error) {
 	result, err := Post[*ResVulList](r, utils.FormatURL(Domain, APIVulList))
 	if err != nil {
 		return 0, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
-	return int(math.Ceil(float64(result.Data.Total) / float64(r.PageSize))), nil
+	if pageSize == 0 {
+		pageSize = PageSize
+	}
+	return int(math.Ceil(float64(result.Data.Total) / float64(pageSize))), nil
 }
 
-func (r *ReqVulList) read(file string) (*TableVulList, error) {
+func (r *ReqVulList) read(file string) (*Record, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to read :%w", err)
 	}
-	var vulList TableVulList
+	var vulList Record
 	err = json.Unmarshal(data, &vulList)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to unmarshal:%w", err)
 	}
 	return &vulList, nil
+}
+
+func (r *ReqVulList) store(db *gorm.DB, data *[]Record) {
+	var vuls []TableVulList
+	for _, vul := range *data {
+		vuls = append(vuls, TableVulList{Record: vul})
+	}
+	db.Create(&vuls)
 }

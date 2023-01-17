@@ -34,15 +34,6 @@ type TableProduct struct {
 func (t *TableProduct) TableName() string {
 	return ProductTable
 }
-func (t *TableProduct) createTable(db *gorm.DB) error {
-	if db.Migrator().HasTable(t.TableName()) {
-		return nil
-	}
-	if err := db.Migrator().CreateTable(&TableProduct{}); err != nil {
-		return err
-	}
-	return nil
-}
 
 func (r *ReqProduct) Name() string {
 	return ProductName
@@ -72,8 +63,7 @@ func (r *ReqProduct) Save(data *[]Product, dir string) error {
 }
 
 func (r *ReqProduct) StoreByFile(db *gorm.DB, dir string) error {
-	var mysql TableProduct
-	if err := mysql.createTable(db); err != nil {
+	if err := CreateTable(db, ProductTable); err != nil {
 		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
 	}
 	file := filepath.Join(dir, ProductFile)
@@ -81,38 +71,38 @@ func (r *ReqProduct) StoreByFile(db *gorm.DB, dir string) error {
 	if err != nil {
 		return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), ProductFile, err)
 	}
-	for _, product := range products {
-		db.Create(&product)
-		log.Printf("【%s】store %s successfully", r.Name(), product.Label)
-	}
+	r.store(db, products)
 	return nil
 }
 
 func (r *ReqProduct) StoreByRequest(db *gorm.DB) error {
-	var mysql TableProduct
-	if err := mysql.createTable(db); err != nil {
+	if err := CreateTable(db, ProductTable); err != nil {
 		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
 	}
 	products, err := r.Fetch()
 	if err != nil {
 		return xerrors.Errorf("【%s】fail to fetch :%w\n", r.Name(), err)
 	}
-	for _, product := range *products {
-		db.Create(&product)
-		log.Printf("【%s】store %s successfully", r.Name(), product.Label)
-	}
+	r.store(db, products)
 	return nil
 }
 
-func (r *ReqProduct) read(file string) ([]TableProduct, error) {
+func (r *ReqProduct) read(file string) (*[]Product, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to read :%w", err)
 	}
-	var product []TableProduct
-	err = json.Unmarshal(data, &product)
+	var products []Product
+	err = json.Unmarshal(data, &products)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to unmarshal:%w", err)
 	}
-	return product, nil
+	return &products, nil
+}
+func (r *ReqProduct) store(db *gorm.DB, data *[]Product) {
+	var products []TableProduct
+	for _, product := range *data {
+		products = append(products, TableProduct{Product: product})
+	}
+	db.Create(&products)
 }

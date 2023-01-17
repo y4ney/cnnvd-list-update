@@ -35,85 +35,77 @@ type TableVendor struct {
 func (v *TableVendor) TableName() string {
 	return VendorTable
 }
-func (v *TableVendor) createTable(db *gorm.DB) error {
-	if db.Migrator().HasTable(v.TableName()) {
-		return nil
-	}
-	if err := db.Migrator().CreateTable(&TableVendor{}); err != nil {
-		return err
-	}
-	return nil
-}
 
-func (v *ReqVendor) Name() string {
+func (r *ReqVendor) Name() string {
 	return VendorName
 }
 
-func (v *ReqVendor) Fetch() (*[]Vendor, error) {
+func (r *ReqVendor) Fetch() (*[]Vendor, error) {
 	// 获取供应商信息
-	resVendor, err := Post[*ResVendor](v, utils.FormatURL(Domain, APIVendor))
+	resVendor, err := Post[*ResVendor](r, utils.FormatURL(Domain, APIVendor))
 	if err != nil {
-		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", v.Name(), err)
+		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
 	var vendors []Vendor
 	for _, data := range resVendor.Data {
 		vendors = append(vendors, data)
 	}
-	log.Printf("【%s】fetch successfully!", v.Name())
+	log.Printf("【%s】fetch successfully!", r.Name())
 	return &vendors, nil
 }
 
-func (v *ReqVendor) Save(data *[]Vendor, dir string) error {
+func (r *ReqVendor) Save(data *[]Vendor, dir string) error {
 	path := filepath.Join(dir, VendorFile)
 	err := utils.Write(path, data)
 	if err != nil {
-		return xerrors.Errorf("【%s】fail to save :%w\n", v.Name(), err)
+		return xerrors.Errorf("【%s】fail to save :%w\n", r.Name(), err)
 	}
-	log.Printf("【%s】save %s successfully", v.Name(), path)
+	log.Printf("【%s】save %s successfully", r.Name(), path)
 	return nil
 }
 
-func (v *ReqVendor) StoreByFile(db *gorm.DB, dir string) error {
-	var mysql TableVendor
-	if err := mysql.createTable(db); err != nil {
-		return xerrors.Errorf("【%s】fail to create table :%w\n", v.Name(), err)
+func (r *ReqVendor) StoreByFile(db *gorm.DB, dir string) error {
+	if err := CreateTable(db, VendorTable); err != nil {
+		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
 	}
 	file := filepath.Join(dir, VendorFile)
-	vendors, err := v.read(file)
+	vendors, err := r.read(file)
 	if err != nil {
-		return xerrors.Errorf("【%s】fail to read %s:%w\n", v.Name(), VendorFile, err)
+		return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), VendorFile, err)
 	}
-	for _, vendor := range vendors {
-		db.Create(&vendor)
-		log.Printf("【%s】store %s successfully", v.Name(), vendor.Label)
-	}
+	r.store(db, vendors)
 	return nil
 }
 
-func (v *ReqVendor) StoreByRequest(db *gorm.DB) error {
-	var mysql TableVendor
-	if err := mysql.createTable(db); err != nil {
-		return xerrors.Errorf("【%s】fail to create table :%w\n", v.Name(), err)
+func (r *ReqVendor) StoreByRequest(db *gorm.DB) error {
+	if err := CreateTable(db, VendorTable); err != nil {
+		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
 	}
-	vendors, err := v.Fetch()
+	vendors, err := r.Fetch()
 	if err != nil {
-		return xerrors.Errorf("【%s】fail to fetch :%w\n", v.Name(), err)
+		return xerrors.Errorf("【%s】fail to fetch :%w\n", r.Name(), err)
 	}
-	for _, vendor := range *vendors {
-		db.Create(&vendor)
-		log.Printf("【%s】store %s successfully", v.Name(), vendor.Label)
-	}
+	r.store(db, vendors)
 	return nil
 }
-func (v *ReqVendor) read(file string) ([]TableVendor, error) {
+
+func (r *ReqVendor) read(file string) (*[]Vendor, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to read :%w", err)
 	}
-	var vendor []TableVendor
-	err = json.Unmarshal(data, &vendor)
+	var vendors []Vendor
+	err = json.Unmarshal(data, &vendors)
 	if err != nil {
 		return nil, xerrors.Errorf("fail to unmarshal:%w", err)
 	}
-	return vendor, nil
+	return &vendors, nil
+}
+
+func (r *ReqVendor) store(db *gorm.DB, data *[]Vendor) {
+	var vendors []TableVendor
+	for _, vendor := range *data {
+		vendors = append(vendors, TableVendor{Vendor: vendor})
+	}
+	db.Create(&vendors)
 }
