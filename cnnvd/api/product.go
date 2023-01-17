@@ -48,14 +48,14 @@ func (r *ReqProduct) Name() string {
 	return ProductName
 }
 
-func (r *ReqProduct) Fetch() (*[]TableProduct, error) {
+func (r *ReqProduct) Fetch() (*[]Product, error) {
 	resProduct, err := Post[*ResProduct](r, utils.FormatURL(Domain, APIProduct))
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
-	var products []TableProduct
+	var products []Product
 	for _, data := range resProduct.Data {
-		products = append(products, TableProduct{Product: data})
+		products = append(products, data)
 	}
 	log.Printf("【%s】fetch successfully!", r.Name())
 	return &products, nil

@@ -1,0 +1,12 @@
+{
+  "id": "f93433d1575641779b48f03fbd35c4ef",
+  "vulName": "Berkeley Sendmail 5.x DEBUG远程执行任意命令漏洞",
+  "cnnvdCode": "CNNVD-198801-001",
+  "cveCode": "CVE-1999-0095",
+  "hazardLevel": 1,
+  "createTime": "2022-09-21",
+  "publishTime": "1988-10-01",
+  "updateTime": "2019-06-12",
+  "typeName": "其他",
+  "vulType": "0"
+}

@@ -20,7 +20,7 @@ func TestReqVulList_Fetch(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    *[]TableVulList
+		want    *[]Record
 		wantErr bool
 	}{
 		{
@@ -30,35 +30,29 @@ func TestReqVulList_Fetch(t *testing.T) {
 				PageSize:  3,
 				Keyword:   FormatKeyword(1988, "01"),
 			},
-			want: &[]TableVulList{
+			want: &[]Record{
 				{
-					// TODO model的值还会进行比较
-					Record: Record{
-						Id:          "d19706219d1648da9a8d008eb3a7aeec",
-						VulName:     "ftpd CWD ~root命令漏洞",
-						CnnvdCode:   "CNNVD-198801-002",
-						CveCode:     "CVE-1999-0082",
-						HazardLevel: 1,
-						CreateTime:  "2022-09-21",
-						PublishTime: "1988-11-11",
-						UpdateTime:  "2010-12-03",
-						TypeName:    "",
-						VulType:     "0",
-					},
+					Id:          "d19706219d1648da9a8d008eb3a7aeec",
+					VulName:     "ftpd CWD ~root命令漏洞",
+					CnnvdCode:   "CNNVD-198801-002",
+					CveCode:     "CVE-1999-0082",
+					HazardLevel: 1,
+					CreateTime:  "2022-09-21",
+					PublishTime: "1988-11-11",
+					UpdateTime:  "2010-12-03",
+					VulType:     "0",
 				},
 				{
-					Record: Record{
-						Id:          "f93433d1575641779b48f03fbd35c4ef",
-						VulName:     "Berkeley Sendmail 5.x DEBUG远程执行任意命令漏洞",
-						CnnvdCode:   "CNNVD-198801-001",
-						CveCode:     "CVE-1999-0095",
-						HazardLevel: 1,
-						CreateTime:  "2022-09-21",
-						PublishTime: "1988-10-01",
-						UpdateTime:  "2019-06-12",
-						TypeName:    "其他",
-						VulType:     "0",
-					},
+					Id:          "f93433d1575641779b48f03fbd35c4ef",
+					VulName:     "Berkeley Sendmail 5.x DEBUG远程执行任意命令漏洞",
+					CnnvdCode:   "CNNVD-198801-001",
+					CveCode:     "CVE-1999-0095",
+					HazardLevel: 1,
+					CreateTime:  "2022-09-21",
+					PublishTime: "1988-10-01",
+					UpdateTime:  "2019-06-12",
+					TypeName:    "其他",
+					VulType:     "0",
 				},
 			},
 			wantErr: false,
@@ -108,7 +102,7 @@ func TestReqVulList_GetLatestCNNVD(t *testing.T) {
 		{
 			name:    "happy path",
 			fields:  fields{},
-			want:    "CNNVD-202301-1036",
+			want:    "CNNVD-202301-1177",
 			wantErr: false,
 		},
 	}
@@ -148,7 +142,7 @@ func TestReqVulList_Save(t *testing.T) {
 		DateType    string
 	}
 	type args struct {
-		data *[]TableVulList
+		data *[]Record
 		dir  string
 	}
 	tests := []struct {
@@ -161,34 +155,30 @@ func TestReqVulList_Save(t *testing.T) {
 			name:   "",
 			fields: fields{},
 			args: args{
-				data: &[]TableVulList{
+				data: &[]Record{
 					{
-						Record: Record{
-							Id:          "d19706219d1648da9a8d008eb3a7aeec",
-							VulName:     "ftpd CWD ~root命令漏洞",
-							CnnvdCode:   "CNNVD-198801-002",
-							CveCode:     "CVE-1999-0082",
-							HazardLevel: 1,
-							CreateTime:  "2022-09-21",
-							PublishTime: "1988-11-11",
-							UpdateTime:  "2010-12-03",
-							TypeName:    "",
-							VulType:     "0",
-						},
+						Id:          "d19706219d1648da9a8d008eb3a7aeec",
+						VulName:     "ftpd CWD ~root命令漏洞",
+						CnnvdCode:   "CNNVD-198801-002",
+						CveCode:     "CVE-1999-0082",
+						HazardLevel: 1,
+						CreateTime:  "2022-09-21",
+						PublishTime: "1988-11-11",
+						UpdateTime:  "2010-12-03",
+						TypeName:    "",
+						VulType:     "0",
 					},
 					{
-						Record: Record{
-							Id:          "f93433d1575641779b48f03fbd35c4ef",
-							VulName:     "Berkeley Sendmail 5.x DEBUG远程执行任意命令漏洞",
-							CnnvdCode:   "CNNVD-198801-001",
-							CveCode:     "CVE-1999-0095",
-							HazardLevel: 1,
-							CreateTime:  "2022-09-21",
-							PublishTime: "1988-10-01",
-							UpdateTime:  "2019-06-12",
-							TypeName:    "其他",
-							VulType:     "0",
-						},
+						Id:          "f93433d1575641779b48f03fbd35c4ef",
+						VulName:     "Berkeley Sendmail 5.x DEBUG远程执行任意命令漏洞",
+						CnnvdCode:   "CNNVD-198801-001",
+						CveCode:     "CVE-1999-0095",
+						HazardLevel: 1,
+						CreateTime:  "2022-09-21",
+						PublishTime: "1988-10-01",
+						UpdateTime:  "2019-06-12",
+						TypeName:    "其他",
+						VulType:     "0",
 					},
 				},
 				dir: "testdata",

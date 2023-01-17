@@ -14,18 +14,16 @@ func TestReqProduct_Fetch(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    *[]TableProduct
+		want    *[]Product
 		wantErr bool
 	}{
 		{
 			name:   "happy path",
 			fields: fields{"PowerDNS Recursor"},
-			want: &[]TableProduct{
+			want: &[]Product{
 				{
-					Product: Product{
-						Label: "1000",
-						Value: "PowerDNS Recursor",
-					},
+					Label: "1000",
+					Value: "PowerDNS Recursor",
 				},
 			},
 			wantErr: false,

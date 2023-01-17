@@ -14,18 +14,16 @@ func TestReqVendor_Fetch(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    *[]TableVendor
+		want    *[]Vendor
 		wantErr bool
 	}{
 		{
 			name:   "happy path",
 			fields: fields{"北京智慧远景科技产业有限公司"},
-			want: &[]TableVendor{
+			want: &[]Vendor{
 				{
-					Vendor: Vendor{
-						Label: "1000006",
-						Value: "北京智慧远景科技产业有限公司",
-					},
+					Label: "1000006",
+					Value: "北京智慧远景科技产业有限公司",
 				},
 			},
 			wantErr: false,

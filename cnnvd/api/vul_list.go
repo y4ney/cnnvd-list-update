@@ -43,7 +43,7 @@ type Record struct {
 	VulName     string `json:"vulName,omitempty"`
 	CnnvdCode   string `json:"cnnvdCode,omitempty"`
 	CveCode     string `json:"cveCode,omitempty"`
-	HazardLevel int    `json:"hazardintel,omitempty"`
+	HazardLevel int64  `json:"hazardLevel,omitempty"`
 	CreateTime  string `json:"createTime,omitempty"`
 	PublishTime string `json:"publishTime,omitempty"`
 	UpdateTime  string `json:"updateTime,omitempty"`
@@ -79,12 +79,12 @@ func NewReqVulList(keyword string) *ReqVulList {
 	}
 }
 
-func (r *ReqVulList) Fetch() (*[]TableVulList, error) {
+func (r *ReqVulList) Fetch() (*[]Record, error) {
 	num, err := r.getPageNum()
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to get page num:%w\n", r.Name(), err)
 	}
-	var vuls []TableVulList
+	var vuls []Record
 	for i := 1; i <= num; i++ {
 		r.PageIndex = i
 		resList, err := Post[*ResVulList](r, utils.FormatURL(Domain, APIVulList))
@@ -93,14 +93,14 @@ func (r *ReqVulList) Fetch() (*[]TableVulList, error) {
 		}
 		log.Printf("【%s】第%v/%v页", r.Name(), i, num)
 		for _, record := range resList.Data.Records {
-			vuls = append(vuls, TableVulList{Record: record})
+			vuls = append(vuls, record)
 			log.Printf("【%s】fetch %s successfully!", r.Name(), record.CnnvdCode)
 		}
 	}
 	return &vuls, nil
 }
 
-func (r *ReqVulList) Save(data *[]TableVulList, dir string) error {
+func (r *ReqVulList) Save(data *[]Record, dir string) error {
 	vulList := filepath.Join(dir, VulListFile)
 	exist, err := utils.PathExists(vulList)
 	if err != nil {

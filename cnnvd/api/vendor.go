@@ -49,15 +49,15 @@ func (v *ReqVendor) Name() string {
 	return VendorName
 }
 
-func (v *ReqVendor) Fetch() (*[]TableVendor, error) {
+func (v *ReqVendor) Fetch() (*[]Vendor, error) {
 	// 获取供应商信息
 	resVendor, err := Post[*ResVendor](v, utils.FormatURL(Domain, APIVendor))
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", v.Name(), err)
 	}
-	var vendors []TableVendor
+	var vendors []Vendor
 	for _, data := range resVendor.Data {
-		vendors = append(vendors, TableVendor{Vendor: data})
+		vendors = append(vendors, data)
 	}
 	log.Printf("【%s】fetch successfully!", v.Name())
 	return &vendors, nil
