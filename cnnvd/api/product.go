@@ -40,12 +40,20 @@ func (r *ReqProduct) Name() string {
 }
 
 func (r *ReqProduct) Fetch() (*[]Product, error) {
-	resProduct, err := Post[*ResProduct](r, utils.FormatURL(Domain, APIProduct))
+	var (
+		products    []Product
+		resProducts ResProduct
+	)
+
+	resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIProduct), r, Retry)
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
-	var products []Product
-	for _, data := range resProduct.Data {
+	err = json.Unmarshal(resBody, &resProducts)
+	if err != nil {
+		return nil, xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
+	}
+	for _, data := range resProducts.Data {
 		products = append(products, data)
 	}
 	log.Printf("【%s】fetch successfully!", r.Name())
@@ -69,7 +77,7 @@ func (r *ReqProduct) StoreByFile(db *gorm.DB, dir string) error {
 	file := filepath.Join(dir, ProductFile)
 	products, err := r.read(file)
 	if err != nil {
-		return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), ProductFile, err)
+		return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), file, err)
 	}
 	r.store(db, products)
 	return nil

@@ -1,9 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/0yaney0/cnnvd-list-update/utils"
 	"golang.org/x/xerrors"
+	"gorm.io/gorm"
 	"log"
+	"os"
 	"path/filepath"
 )
 
@@ -26,16 +29,112 @@ type VulType struct {
 	VulType []VulType `json:"children,omitempty"`
 }
 
-func (v *ReqVulType) Fetch() error {
+type TableVulType struct {
+	gorm.Model
+	Id    string `json:"id,omitempty"`
+	Pid   string `json:"pid,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+func (t *TableVulType) TableName() string {
+	return VulTypeTable
+}
+
+func (r *ReqVulType) Name() string {
+	return VulTypeName
+}
+
+func (r *ReqVulType) Fetch() (*[]VulType, error) {
+	var (
+		resVulType ResVulType
+		vulTypes   []VulType
+	)
+
 	// 获取漏洞类型
-	resVulType, err := Post[*ResVulType](ReqVulType{}, utils.FormatURL(Domain, APIVulType))
+	resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIVulType), r, Retry)
 	if err != nil {
-		return xerrors.Errorf("fail to request VulType:%w\n", err)
+		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
-	err = utils.Write(filepath.Join(utils.DefaultCacheDir(), "vul_type.json"), resVulType.Data)
+
+	err = json.Unmarshal(resBody, &resVulType)
 	if err != nil {
-		return xerrors.Errorf("fail to save VulType:%w\n", err)
+		return nil, xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
 	}
-	log.Printf("save %s successfully", filepath.Join(utils.CNNVDListDir(), "vul_type.json"))
+
+	for _, vulType := range resVulType.Data {
+		vulTypes = append(vulTypes, vulType)
+	}
+	log.Printf("【%s】fetch successfully!", r.Name())
+	return &vulTypes, nil
+
+}
+func (r *ReqVulType) Save(data *[]VulType, dir string) error {
+	path := filepath.Join(dir, VulTypeFile)
+	err := utils.Write(path, data)
+	if err != nil {
+		return xerrors.Errorf("【%s】fail to save :%w\n", r.Name(), err)
+	}
+	log.Printf("【%s】save %s successfully", r.Name(), path)
 	return nil
+}
+func (r *ReqVulType) StoreByFile(db *gorm.DB, dir string) error {
+	if err := CreateTable(db, VulTypeTable); err != nil {
+		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
+	}
+	file := filepath.Join(dir, VulTypeFile)
+	vulTypes, err := r.read(file)
+	if err != nil {
+		return xerrors.Errorf("【%s】fail to read %s:%w\n", r.Name(), ProductFile, err)
+	}
+	r.store(db, vulTypes)
+	return nil
+}
+
+func (r *ReqVulType) StoreByRequest(db *gorm.DB) error {
+	if err := CreateTable(db, VulTypeTable); err != nil {
+		return xerrors.Errorf("【%s】fail to create table :%w\n", r.Name(), err)
+	}
+	vulTypes, err := r.Fetch()
+	if err != nil {
+		return xerrors.Errorf("【%s】fail to fetch :%w\n", r.Name(), err)
+	}
+	r.store(db, vulTypes)
+	return nil
+}
+
+func (r *ReqVulType) read(file string) (*[]VulType, error) {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil, xerrors.Errorf("fail to read :%w", err)
+	}
+	var vulTypes []VulType
+	err = json.Unmarshal(data, &vulTypes)
+	if err != nil {
+		return nil, xerrors.Errorf("fail to unmarshal:%w", err)
+	}
+	return &vulTypes, nil
+}
+
+func (r *ReqVulType) store(db *gorm.DB, data *[]VulType) {
+	var vulTypes []TableVulType
+	for _, vulType := range *data {
+		vulTypes = append(vulTypes, TableVulType{
+			Id:    vulType.Id,
+			Pid:   vulType.Pid,
+			Value: vulType.Value,
+		})
+		if vulType.VulType == nil {
+			continue
+		}
+		for {
+			for _, v := range vulType.VulType {
+				vulTypes = append(vulTypes, TableVulType{
+					Id:    v.Id,
+					Pid:   v.Pid,
+					Value: v.Value,
+				})
+			}
+		}
+	}
+	db.CreateInBatches(&vulTypes, 100)
 }

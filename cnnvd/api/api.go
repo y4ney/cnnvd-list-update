@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/0yaney0/cnnvd-list-update/utils"
 	"golang.org/x/xerrors"
@@ -14,28 +13,34 @@ import (
 )
 
 const (
-	Domain         = "www.cnnvd.org.cn"
-	APIVulDetail   = "web/cnnvdVul/getCnnnvdDetailOnDatasource"
-	APIVulList     = "web/homePage/cnnvdVulList"
-	APIVendor      = "web/homePage/getVendorSelectList"
-	APIVulType     = "web/homePage/vulTypeList"
-	APIProduct     = "web/homePage/getProductSelectList"
-	PageSize       = 100
-	Retry          = 5
-	FirstYear      = 1988
-	DatabaseSource = "root:1600850141yangli@tcp(localhost:3306)/cnnvd?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai"
-	ProductName    = "cnnvd/api/product.go"
-	VendorName     = "cnnvd/api/vendor.go"
-	VulDetailName  = "cnnvd/api/vul_detail.go"
-	VulListName    = "cnnvd/api/vul_list.go"
-	ProductTable   = "product"
-	VendorTable    = "vendor"
-	VulListTable   = "vul_list"
-	VulDetailTable = "vul_detail"
-	VendorFile     = "vendor.json"
-	ProductFile    = "product.json"
-	VulListFile    = "vul_list"
-	VulDetailFile  = "vul_detail"
+	Domain           = "www.cnnvd.org.cn"
+	APIVulDetail     = "web/cnnvdVul/getCnnnvdDetailOnDatasource"
+	APIVulList       = "web/homePage/cnnvdVulList"
+	APIVendor        = "web/homePage/getVendorSelectList"
+	APIVulType       = "web/homePage/vulTypeList"
+	APIProduct       = "web/homePage/getProductSelectList"
+	PageSize         = 100
+	Retry            = 5
+	FirstYear        = 1988
+	DatabaseSource   = "root:1600850141yangli@tcp(localhost:3306)/cnnvd?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai"
+	ProductName      = "cnnvd/api/product.go"
+	VendorName       = "cnnvd/api/vendor.go"
+	VulDetailName    = "cnnvd/api/vul_detail.go"
+	VulListName      = "cnnvd/api/vul_list.go"
+	VulTypeName      = "cnnvd/api/vul_type.go"
+	HazardLevelName  = "cnnvd/api/hazard_level.go"
+	ProductTable     = "product"
+	VendorTable      = "vendor"
+	VulListTable     = "vul_list"
+	VulDetailTable   = "vul_detail"
+	VulTypeTable     = "vul_type"
+	HazardLevelTable = "hazard_level"
+	VendorFile       = "vendor.json"
+	ProductFile      = "product.json"
+	VulTypeFile      = "vul_type.json"
+	VulListFile      = "vul_list"
+	VulDetailFile    = "vul_detail"
+	HazardLevelFile  = "hazard_level.json"
 )
 
 // ResCode 响应码
@@ -142,22 +147,6 @@ func LatestCNNVD(str1, str2 string) (string, error) {
 	return str2, nil
 }
 
-func Post[T *ResVendor | *ResVulType | *ResVulDetail | *ResVulList | *ResProduct](req any, url string) (res T, err error) {
-	data, err := utils.FormatBody(req)
-	if err != nil {
-		return nil, xerrors.Errorf("fail to format request body:%w\n", err)
-	}
-	resBody, err := utils.Post(url, data, Retry)
-	if err != nil {
-		return nil, xerrors.Errorf("fail to post data:%w\n", err)
-	}
-	err = json.Unmarshal(resBody, &res)
-	if err != nil {
-		return nil, xerrors.Errorf("fail to unmarshal response body:%w\n", err)
-	}
-	return res, err
-}
-
 // SaveCNNVDPerYear 存储每年的漏洞
 func SaveCNNVDPerYear(dirPath string, cnnvdID string, data interface{}) error {
 	cnnvd, err := NewCNNVD(cnnvdID)
@@ -196,6 +185,10 @@ func CreateTable(db *gorm.DB, name string) (err error) {
 		err = db.Migrator().CreateTable(&TableVulList{})
 	case VulDetailFile:
 		err = db.Migrator().CreateTable(&TableVulDetail{})
+	case VulTypeTable:
+		err = db.Migrator().CreateTable(&TableVulType{})
+	default:
+		return xerrors.Errorf("don't allow to create %s table", name)
 	}
 	if err != nil {
 		return xerrors.Errorf("fail to create %s table:%w\n", name, err)

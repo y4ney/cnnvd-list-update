@@ -41,13 +41,21 @@ func (r *ReqVendor) Name() string {
 }
 
 func (r *ReqVendor) Fetch() (*[]Vendor, error) {
+	var (
+		resVendors ResVendor
+		vendors    []Vendor
+	)
+
 	// 获取供应商信息
-	resVendor, err := Post[*ResVendor](r, utils.FormatURL(Domain, APIVendor))
+	resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIVendor), r, Retry)
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
-	var vendors []Vendor
-	for _, data := range resVendor.Data {
+	err = json.Unmarshal(resBody, &resVendors)
+	if err != nil {
+		return nil, xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
+	}
+	for _, data := range resVendors.Data {
 		vendors = append(vendors, data)
 	}
 	log.Printf("【%s】fetch successfully!", r.Name())

@@ -91,15 +91,21 @@ func (r *ReqVulDetail) Name() string {
 }
 
 func (r *ReqVulDetail) Fetch() (*VulDetail, error) {
+	var resVulDetail ResVulDetail
 	if r.Id == "" || r.VulType == "" || r.CnnvdCode == "" {
 		return nil, xerrors.New("please specify id,vul type and cnnvd vode")
 	}
-	resDetail, err := Post[*ResVulDetail](r, utils.FormatURL(Domain, APIVulDetail))
+	resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIVulDetail), r, Retry)
 	if err != nil {
-		return nil, xerrors.Errorf("【%s】fail to request %s's vulDetail:%w\n", r.Name(), resDetail.Data.CnnvdCode, err)
+		return nil, xerrors.Errorf("【%s】fail to request %s's vulDetail:%w\n", r.Name(), r.CnnvdCode, err)
 	}
-	log.Printf("【%s】fetch %s successfully", r.Name(), resDetail.Data.CnnvdCode)
-	return &resDetail.Data, nil
+	err = json.Unmarshal(resBody, &resVulDetail)
+	if err != nil {
+		return nil, xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
+	}
+
+	log.Printf("【%s】fetch %s successfully", r.Name(), r.CnnvdCode)
+	return &resVulDetail.Data, nil
 }
 
 func (r *ReqVulDetail) Save(data *VulDetail, dir string) error {

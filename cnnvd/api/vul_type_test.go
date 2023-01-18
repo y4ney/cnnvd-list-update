@@ -7,33 +7,21 @@ import (
 	"testing"
 )
 
-func TestReqVendor_Fetch(t *testing.T) {
-	type fields struct {
-		VendorKeyword string
-	}
+func TestReqVulType_Fetch(t *testing.T) {
 	tests := []struct {
 		name    string
-		fields  fields
-		want    *[]Vendor
+		want    *[]VulType
 		wantErr bool
 	}{
 		{
-			name:   "happy test a vendor",
-			fields: fields{VendorKeyword: "Docker"},
-			want: &[]Vendor{
-				{
-					Label: "1001219",
-					Value: "Docker",
-				},
-			},
+			name:    "",
+			want:    nil,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReqVendor{
-				VendorKeyword: tt.fields.VendorKeyword,
-			}
+			r := &ReqVulType{}
 			got, err := r.Fetch()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Fetch() error = %v, wantErr %v", err, tt.wantErr)
@@ -46,39 +34,21 @@ func TestReqVendor_Fetch(t *testing.T) {
 	}
 }
 
-func TestReqVendor_Save(t *testing.T) {
-	type fields struct {
-		VendorKeyword string
-	}
+func TestReqVulType_Save(t *testing.T) {
 	type args struct {
-		data *[]Vendor
+		data *[]VulType
 		dir  string
 	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
 		wantErr bool
 	}{
-		{
-			name: "happy test a vendor",
-			args: args{
-				data: &[]Vendor{
-					{
-						Label: "1001216",
-						Value: "Docker",
-					},
-				},
-				dir: "testdata",
-			},
-			wantErr: false,
-		},
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReqVendor{
-				VendorKeyword: tt.fields.VendorKeyword,
-			}
+			r := &ReqVulType{}
 			if err := r.Save(tt.args.data, tt.args.dir); (err != nil) != tt.wantErr {
 				t.Errorf("Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -86,38 +56,21 @@ func TestReqVendor_Save(t *testing.T) {
 	}
 }
 
-func TestReqVendor_StoreByFile(t *testing.T) {
-	type fields struct {
-		VendorKeyword string
-	}
+func TestReqVulType_StoreByFile(t *testing.T) {
 	type args struct {
 		db  *gorm.DB
 		dir string
 	}
-	db, err := gorm.Open(mysql.Open(DatabaseSource), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
 		wantErr bool
 	}{
-		{
-			name: "happy test a vendor",
-			args: args{
-				db:  db,
-				dir: "testdata",
-			},
-			wantErr: false,
-		},
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReqVendor{
-				VendorKeyword: tt.fields.VendorKeyword,
-			}
+			r := &ReqVulType{}
 			if err := r.StoreByFile(tt.args.db, tt.args.dir); (err != nil) != tt.wantErr {
 				t.Errorf("StoreByFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -125,10 +78,7 @@ func TestReqVendor_StoreByFile(t *testing.T) {
 	}
 }
 
-func TestReqVendor_StoreByRequest(t *testing.T) {
-	type fields struct {
-		VendorKeyword string
-	}
+func TestReqVulType_StoreByRequest(t *testing.T) {
 	type args struct {
 		db *gorm.DB
 	}
@@ -138,22 +88,18 @@ func TestReqVendor_StoreByRequest(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
 		wantErr bool
 	}{
 		{
-			name:    "happy test for all vendor",
-			fields:  fields{VendorKeyword: ""},
+			name:    "happy test for all vul type",
 			args:    args{db},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &ReqVendor{
-				VendorKeyword: tt.fields.VendorKeyword,
-			}
+			r := &ReqVulType{}
 			if err := r.StoreByRequest(tt.args.db); (err != nil) != tt.wantErr {
 				t.Errorf("StoreByRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}

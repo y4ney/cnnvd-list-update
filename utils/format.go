@@ -2,7 +2,6 @@ package utils
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -10,14 +9,6 @@ import (
 
 func FormatURL(domain, path string) string {
 	return "https://" + domain + "/" + path
-}
-
-func FormatBody(v any) (string, error) {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return "", nil
-	}
-	return string(data), nil
 }
 
 func FormatMonth(month int) string {

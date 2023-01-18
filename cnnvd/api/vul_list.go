@@ -71,19 +71,27 @@ func NewReqVulList(keyword string) *ReqVulList {
 }
 
 func (r *ReqVulList) Fetch() (*[]Record, error) {
+	var (
+		resVulList ResVulList
+		vuls       []Record
+	)
+
 	num, err := r.getPageNum(r.PageSize)
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to get page num:%w\n", r.Name(), err)
 	}
-	var vuls []Record
 	for i := 1; i <= num; i++ {
 		r.PageIndex = i
-		resList, err := Post[*ResVulList](r, utils.FormatURL(Domain, APIVulList))
+		resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIVulList), r, Retry)
 		if err != nil {
 			return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 		}
+		err = json.Unmarshal(resBody, &resVulList)
+		if err != nil {
+			return nil, xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
+		}
 		log.Printf("【%s】第%v/%v页", r.Name(), i, num)
-		for _, record := range resList.Data.Records {
+		for _, record := range resVulList.Data.Records {
 			vuls = append(vuls, record)
 			log.Printf("【%s】fetch %s successfully!", r.Name(), record.CnnvdCode)
 		}
@@ -148,19 +156,31 @@ func (r *ReqVulList) StoreByRequest(db *gorm.DB) error {
 }
 
 // GetLatestCNNVD 获取最新的漏洞编号
-func (r *ReqVulList) GetLatestCNNVD() (string, error) {
+func (r *ReqVulList) GetLatestCNNVD(pageSize int) (string, error) {
+	var (
+		resVulList  ResVulList
+		latestCNNVD string
+	)
+	if pageSize == 0 {
+		r.PageSize = 10
+	} else {
+		r.PageSize = pageSize
+	}
+
 	//请求漏洞列表
-	r.PageSize = 10
-	resList, err := Post[*ResVulList](r, utils.FormatURL(Domain, APIVulList))
+	resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIVulList), r, Retry)
 	if err != nil {
 		return "", xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
+	err = json.Unmarshal(resBody, &resVulList)
+	if err != nil {
+		return "", xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
+	}
 
 	// 设置第一个漏洞为最新的漏洞
-	var latestCNNVD string
-	latestCNNVD = resList.Data.Records[0].CnnvdCode
+	latestCNNVD = resVulList.Data.Records[0].CnnvdCode
 	for i := 1; i <= r.PageSize-1; i++ {
-		latestCNNVD, err = LatestCNNVD(resList.Data.Records[i].CnnvdCode, latestCNNVD)
+		latestCNNVD, err = LatestCNNVD(resVulList.Data.Records[i].CnnvdCode, latestCNNVD)
 		if err != nil {
 			return "", xerrors.Errorf("【%s】fail to get latest cnnvd:%w\n", r.Name(), err)
 		}
@@ -169,14 +189,22 @@ func (r *ReqVulList) GetLatestCNNVD() (string, error) {
 }
 
 func (r *ReqVulList) getPageNum(pageSize int) (num int, err error) {
-	result, err := Post[*ResVulList](r, utils.FormatURL(Domain, APIVulList))
+	var resVulList ResVulList
+	if pageSize == 0 {
+		r.PageSize = PageSize
+	} else {
+		r.PageSize = pageSize
+	}
+	resBody, err := utils.Fetch("POST", utils.FormatURL(Domain, APIVulList), r, Retry)
 	if err != nil {
 		return 0, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
-	if pageSize == 0 {
-		pageSize = PageSize
+	err = json.Unmarshal(resBody, &resVulList)
+	if err != nil {
+		return 0, xerrors.Errorf("【%s】fail to unmarshal resBody :%w\n", r.Name(), err)
 	}
-	return int(math.Ceil(float64(result.Data.Total) / float64(pageSize))), nil
+
+	return int(math.Ceil(float64(resVulList.Data.Total) / float64(resVulList.Data.PageSize))), nil
 }
 
 func (r *ReqVulList) read(file string) (*Record, error) {
