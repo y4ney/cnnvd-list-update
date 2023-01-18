@@ -107,5 +107,5 @@ func (r *ReqVendor) store(db *gorm.DB, data *[]Vendor) {
 	for _, vendor := range *data {
 		vendors = append(vendors, TableVendor{Vendor: vendor})
 	}
-	db.Create(&vendors)
+	db.CreateInBatches(&vendors, 100)
 }

@@ -197,5 +197,5 @@ func (r *ReqVulList) store(db *gorm.DB, data *[]Record) {
 	for _, vul := range *data {
 		vuls = append(vuls, TableVulList{Record: vul})
 	}
-	db.Create(&vuls)
+	db.CreateInBatches(&vuls, 100)
 }

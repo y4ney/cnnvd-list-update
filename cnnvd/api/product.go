@@ -104,5 +104,5 @@ func (r *ReqProduct) store(db *gorm.DB, data *[]Product) {
 	for _, product := range *data {
 		products = append(products, TableProduct{Product: product})
 	}
-	db.Create(&products)
+	db.CreateInBatches(&products, 100)
 }

@@ -182,6 +182,7 @@ func FormatKeyword(year int, month string) string {
 	// TODO 将year和month先解析为时间，然后在format成keyword
 	return fmt.Sprintf("CNNVD-%v%s-", year, month)
 }
+
 func CreateTable(db *gorm.DB, name string) (err error) {
 	if db.Migrator().HasTable(name) {
 		return nil
