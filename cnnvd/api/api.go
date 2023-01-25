@@ -19,6 +19,7 @@ const (
 	APIVendor        = "web/homePage/getVendorSelectList"
 	APIVulType       = "web/homePage/vulTypeList"
 	APIProduct       = "web/homePage/getProductSelectList"
+	APIHazardLevel   = "web/dictionaries/type/hazardLevel"
 	PageSize         = 100
 	Retry            = 5
 	FirstYear        = 1988
@@ -187,6 +188,8 @@ func CreateTable(db *gorm.DB, name string) (err error) {
 		err = db.Migrator().CreateTable(&TableVulDetail{})
 	case VulTypeTable:
 		err = db.Migrator().CreateTable(&TableVulType{})
+	case HazardLevelTable:
+		err = db.Migrator().CreateTable(&TableHazardLevel{})
 	default:
 		return xerrors.Errorf("don't allow to create %s table", name)
 	}

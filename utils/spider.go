@@ -112,13 +112,13 @@ func fetch(method, url string, reqBody any) ([]byte, error) {
 		if err != nil {
 			return nil, xerrors.Errorf("new request fail:%w\n", err)
 		}
+		req.Header.Add("Content-Type", "application/json")
 	} else {
 		req, err = http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, xerrors.Errorf("new request fail:%w\n", err)
 		}
 	}
-	req.Header.Add("Content-Type", "application/json")
 	cli := http.Client{
 		Timeout: time.Second * 5,
 	}

@@ -44,7 +44,7 @@ func (r *ReqHazardLevel) Fetch() (*[]HazardLevel, error) {
 		hazardLevel    []HazardLevel
 	)
 
-	resBody, err := utils.Fetch("GET", utils.FormatURL(Domain, APIProduct), r, Retry)
+	resBody, err := utils.Fetch("GET", utils.FormatURL(Domain, APIHazardLevel), r, Retry)
 	if err != nil {
 		return nil, xerrors.Errorf("【%s】fail to fetch:%w\n", r.Name(), err)
 	}
@@ -106,6 +106,7 @@ func (r *ReqHazardLevel) read(file string) (*[]HazardLevel, error) {
 	}
 	return &hazardLevel, nil
 }
+
 func (r *ReqHazardLevel) store(db *gorm.DB, data *[]HazardLevel) {
 	var hazardLevels []TableHazardLevel
 	for _, hazardLevel := range *data {

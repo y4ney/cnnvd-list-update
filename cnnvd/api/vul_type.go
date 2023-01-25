@@ -33,7 +33,7 @@ type TableVulType struct {
 	gorm.Model
 	Id    string `json:"id,omitempty"`
 	Pid   string `json:"pid,omitempty"`
-	Value string `json:"value,omitempty"`
+	Label string `json:"label,omitempty"`
 }
 
 func (t *TableVulType) TableName() string {
@@ -117,24 +117,22 @@ func (r *ReqVulType) read(file string) (*[]VulType, error) {
 
 func (r *ReqVulType) store(db *gorm.DB, data *[]VulType) {
 	var vulTypes []TableVulType
-	for _, vulType := range *data {
-		vulTypes = append(vulTypes, TableVulType{
-			Id:    vulType.Id,
-			Pid:   vulType.Pid,
-			Value: vulType.Value,
+	traversing(data, &vulTypes)
+	db.CreateInBatches(&vulTypes, 100)
+}
+
+// traversing 递归遍历data，并转化为 vuls
+func traversing(data *[]VulType, vulTypes *[]TableVulType) {
+	for _, d := range *data {
+		var children *[]VulType
+		*vulTypes = append(*vulTypes, TableVulType{
+			Id:    d.Id,
+			Pid:   d.Pid,
+			Label: d.Label,
 		})
-		if vulType.VulType == nil {
-			continue
-		}
-		for {
-			for _, v := range vulType.VulType {
-				vulTypes = append(vulTypes, TableVulType{
-					Id:    v.Id,
-					Pid:   v.Pid,
-					Value: v.Value,
-				})
-			}
+		if d.VulType != nil {
+			children = &d.VulType
+			traversing(children, vulTypes)
 		}
 	}
-	db.CreateInBatches(&vulTypes, 100)
 }

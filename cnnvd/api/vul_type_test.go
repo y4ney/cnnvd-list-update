@@ -3,70 +3,28 @@ package api
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"reflect"
 	"testing"
 )
-
-func TestReqVulType_Fetch(t *testing.T) {
-	tests := []struct {
-		name    string
-		want    *[]VulType
-		wantErr bool
-	}{
-		{
-			name:    "",
-			want:    nil,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReqVulType{}
-			got, err := r.Fetch()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Fetch() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Fetch() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReqVulType_Save(t *testing.T) {
-	type args struct {
-		data *[]VulType
-		dir  string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &ReqVulType{}
-			if err := r.Save(tt.args.data, tt.args.dir); (err != nil) != tt.wantErr {
-				t.Errorf("Save() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
 func TestReqVulType_StoreByFile(t *testing.T) {
 	type args struct {
 		db  *gorm.DB
 		dir string
 	}
+	db, err := gorm.Open(mysql.Open(DatabaseSource), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "happy test",
+			args:    args{db, "testdata"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
